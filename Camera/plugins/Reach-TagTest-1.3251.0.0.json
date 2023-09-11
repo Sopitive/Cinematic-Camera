@@ -1,0 +1,10 @@
+[ // For HR MCC Tag Test 1.3251.0.0 (2023.07.16.176674.1-QFE1)
+  "reach_tag_test.exe+0x04063540,0x100", // X
+  "reach_tag_test.exe+0x04063540,0x104", // Y
+  "reach_tag_test.exe+0x04063540,0x108", // Z
+  "reach_tag_test.exe+0x04063540,0x10C", // Yaw
+  "reach_tag_test.exe+0x04063540,0x110", // Pitch
+  "reach_tag_test.exe+0x04063540,0x114", // Roll
+  "0",
+  "0"
+]
