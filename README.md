@@ -1,4 +1,4 @@
-# Cinematic-Camera
+# Cinematic Camera
 A simple and versatile tool designed spacifically for Halo: The Master Chief Collection to create stunning and dynamic camera shots that were previously impossible using a controller or keyboard and mouse.
 
 # Requirements
