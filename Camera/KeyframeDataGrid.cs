@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,7 +17,7 @@ namespace Camera
             keyframeDataGridView.EditMode = DataGridViewEditMode.EditOnEnter;
             keyframeDataGridView.AllowUserToResizeColumns = false; // Disable column resizing
             keyframeDataGridView.AllowUserToResizeRows = false;    // Disable row resizing
-            keyframeDataGridView.AllowUserToOrderColumns = false; // Disable column sorting
+            keyframeDataGridView.AllowUserToOrderColumns = true; // Enable column sorting
 
             // Add columns to the DataGridView
             keyframeDataGridView.Columns.Add("X", "X");
@@ -28,6 +30,7 @@ namespace Camera
 
             // Subscribe to the CellEndEdit event
             keyframeDataGridView.CellEndEdit += keyframeDataGridView_CellEndEdit;
+            keyframeDataGridView.ColumnHeaderMouseClick += keyframeDataGridView_ColumnHeaderMouseClick;
 
             foreach (var keypoint in keyPoints)
             {
@@ -78,6 +81,27 @@ namespace Camera
             }
         }
 
+        private void keyframeDataGridView_ColumnHeaderMouseClick(object sender, DataGridViewCellMouseEventArgs e)
+        {
+            if (e.ColumnIndex >= 0)
+            {
+                DataGridViewColumn clickedColumn = keyframeDataGridView.Columns[e.ColumnIndex];
+
+                // Determine sorting order (ascending or descending)
+                ListSortDirection direction = (ListSortDirection)SortOrder.Ascending;
+                if (clickedColumn.HeaderCell.SortGlyphDirection == SortOrder.Ascending)
+                {
+                    direction = (ListSortDirection)SortOrder.Descending;
+                }
+
+                // Sort the DataGridView using a custom sorting function
+                keyframeDataGridView.Sort(new DataGridViewCustomComparer(e.ColumnIndex, direction));
+
+                // Set the sort glyph direction
+                clickedColumn.HeaderCell.SortGlyphDirection = (SortOrder)direction;
+            }
+        }
+
         private void keyframeDataGridView_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Delete)
@@ -93,6 +117,39 @@ namespace Camera
                 keyPoints.Add(keyPoints[0]);
                 UpdateDataGridView();
             }
+        }
+    }
+
+    public class DataGridViewCustomComparer : IComparer
+    {
+        private int columnIndex;
+        private ListSortDirection direction;
+
+        public DataGridViewCustomComparer(int columnIndex, ListSortDirection direction)
+        {
+            this.columnIndex = columnIndex;
+            this.direction = direction;
+        }
+
+        public int Compare(object x, object y)
+        {
+            DataGridViewRow row1 = (DataGridViewRow)x;
+            DataGridViewRow row2 = (DataGridViewRow)y;
+
+            // Retrieve the cell values you want to compare
+            float value1 = Convert.ToSingle(row1.Cells[columnIndex].Value);
+            float value2 = Convert.ToSingle(row2.Cells[columnIndex].Value);
+
+            // Compare the values based on the desired column and direction
+            int result = value1.CompareTo(value2);
+
+            // Invert the result if sorting in descending order
+            if (direction == ListSortDirection.Descending)
+            {
+                result = -result;
+            }
+
+            return result;
         }
     }
 }

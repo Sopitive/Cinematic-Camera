@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Numerics;
 
 namespace Camera
 {
@@ -42,8 +44,8 @@ namespace Camera
             TrySelectPredefinedProcess();
             InitializeDataGridView();
             InitializeTimeline();
-            InitializeHotkeys();
             InitializeHotKeyTimer();
+            InitializeHotkeys();
 
             try
             {
@@ -106,26 +108,6 @@ namespace Camera
                     return;
                 }
             }
-        }
-
-        private void setFOV_Click(object sender, EventArgs e)
-        {
-            memory.WriteMemory(playerFov, "float", fovTextbox.Text);
-        }
-
-        private void setVehiFOV_Click(object sender, EventArgs e)
-        {
-            memory.WriteMemory(vehicleFov, "float", fovVehiTextbox.Text);
-        }
-
-        private void setRollAngle_Click(object sender, EventArgs e)
-        {
-            memory.WriteMemory(rollAng, "float", rollAngle.Text);
-        }
-
-        private void setCameraSpeed_Click(object sender, EventArgs e)
-        {
-            memory.WriteMemory(speedCamera, "float", quickAccessSpeed.Text);
         }
 
         private void createKeyframeButton_Click(object sender, EventArgs e)
@@ -199,14 +181,43 @@ namespace Camera
             LoadProcesses();
         }
 
-        private void updateDuration_Click(object sender, EventArgs e)
+        private void gotoSelectedKey_Click(object sender, EventArgs e)
         {
-
+            GotoSelectedKeypoint();
         }
 
-        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        private void replaceWithCurrentPos_Click(object sender, EventArgs e)
         {
-
+            ReplaceSelectedKeypointWithCurrentLocation();
         }
+
+        private void resetCameraRotation_Click(object sender, EventArgs e)
+        {
+            memory.WriteMemory(yawAng, "float", "0");
+            memory.WriteMemory(pitchAng, "float", "0");
+            memory.WriteMemory(rollAng, "float", "0");
+        }
+
+        private void teleportToOrigin_Click(object sender, EventArgs e)
+        {
+            memory.WriteMemory(xPos, "float", "0");
+            memory.WriteMemory(yPos, "float", "0");
+            memory.WriteMemory(zPos, "float", "0");
+        }
+
+        private void applyModifiers_Click(object sender, EventArgs e)
+        {
+            memory.WriteMemory(playerFov, "float", fovTextbox.Text);
+            memory.WriteMemory(rollAng, "float", rollAngle.Text);
+            memory.WriteMemory(speedCamera, "float", quickAccessSpeed.Text);
+        }
+
+        private void teleportCameraButton_Click(object sender, EventArgs e)
+        {
+            memory.WriteMemory(xPos, "float", teleportCameraX.Text);
+            memory.WriteMemory(yPos, "float", teleportCameraY.Text);
+            memory.WriteMemory(zPos, "float", teleportCameraZ.Text);
+        }
+
     }
 }

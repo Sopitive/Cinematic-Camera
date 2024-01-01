@@ -1,18 +1,56 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using static Camera.CameraEasing;
 
 namespace Camera
 {
     public partial class CameraForm
     {
+        private float LerpAngle(float a, float b, float t)
+        {
+            float delta = Math.Abs(b - a);
+            if (delta > Math.PI)
+            {
+                if (b > a)
+                    a += 2 * (float)Math.PI;
+                else
+                    b += 2 * (float)Math.PI;
+            }
+            return a + (b - a) * t;
+        }
+
+        private float lastYaw = 0.0f;
+        private float lastPitch = 0.0f;
+        private float smoothingFactor = 0.5f;
+
+        private Vector3 targetPosition;
+
         public async Task MoveCameraAsync()
         {
-            const float TargetFPS = 60.0f;
-            const float TargetFrameTime = 1.0f / TargetFPS;
+            float UserTargetFPS;
+            float TargetFPS;
+            string inputText = targetFPS.Text;
+
+            // Try to parse the input text to a float using float.TryParse.
+            if (float.TryParse(inputText, out UserTargetFPS))
+            {
+                Console.WriteLine("Target FPS: " + UserTargetFPS);
+            }
+            else
+            {
+                UserTargetFPS = 60.0f;
+                targetFPS.Text = "60";
+                enablePathing.Checked = false;
+                return;
+            }
+
+            TargetFPS = UserTargetFPS;
+            float TargetFrameTime = 1.0f / TargetFPS;
 
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -61,25 +99,64 @@ namespace Camera
                 memory.WriteMemory(yPos, "float", $"{interpolatedPoint.Y}");
                 memory.WriteMemory(zPos, "float", $"{interpolatedPoint.Z}");
 
-                float interpolatedYaw = Easing.CatmullRomAngle(keyPoints[p0Index].Item4, keyPoints[p1Index].Item4, keyPoints[p2Index].Item4, keyPoints[p3Index].Item4, tInSection);
-                float interpolatedPitch = Easing.CatmullRomAngle(keyPoints[p0Index].Item5, keyPoints[p1Index].Item5, keyPoints[p2Index].Item5, keyPoints[p3Index].Item5, tInSection);
-                float interpolatedRoll = Easing.CatmullRomAngle(keyPoints[p0Index].Item6, keyPoints[p1Index].Item6, keyPoints[p2Index].Item6, keyPoints[p3Index].Item6, tInSection);
+                if (enableLookTarget.Checked == true)
+                {
+                    // Read the current camera position from memory
+                    float cameraPosX = memory.ReadFloat(xPos);
+                    float cameraPosY = memory.ReadFloat(yPos);
+                    float cameraPosZ = memory.ReadFloat(zPos);
 
-                // Ensure angle values are within the appropriate range (0 to 2π)
-                interpolatedYaw %= 2 * (float)Math.PI;
-                interpolatedPitch %= 2 * (float)Math.PI;
-                interpolatedRoll %= 2 * (float)Math.PI;
+                    // Assuming targetPosition is correctly set when setTarget is clicked
+                    Vector3 cameraPosition = new Vector3(cameraPosX, cameraPosY, cameraPosZ);
 
-                // Write interpolated angles to memory
-                memory.WriteMemory(yawAng, "float", $"{interpolatedYaw}");
-                memory.WriteMemory(pitchAng, "float", $"{interpolatedPitch}");
-                memory.WriteMemory(rollAng, "float", $"{interpolatedRoll}");
+                    // Calculate the direction vector from the camera position to the target position
+                    Vector3 direction = targetPosition - cameraPosition;
+
+                    // Calculate the yaw angle
+                    float currentYaw = (float)Math.Atan2(direction.Y, direction.X);
+                    float interpolatedYaw = LerpAngle(lastYaw, currentYaw, smoothingFactor); // Adjust smoothingFactor as needed
+                    lastYaw = interpolatedYaw;
+
+                    // Calculate the pitch angle
+                    float currentPitch = (float)Math.Atan2(direction.Z, direction.Length());
+                    float interpolatedPitch = LerpAngle(lastPitch, currentPitch, smoothingFactor); // Adjust smoothingFactor as needed
+                    lastPitch = interpolatedPitch;
+
+                    // Does roll just because
+                    float interpolatedRoll = Easing.CatmullRomAngle(keyPoints[p0Index].Item6, keyPoints[p1Index].Item6, keyPoints[p2Index].Item6, keyPoints[p3Index].Item6, tInSection);
+
+                    // Ensure angle values are within the appropriate range (0 to 2π)
+                    interpolatedYaw %= 2 * (float)Math.PI;
+                    interpolatedPitch %= 2 * (float)Math.PI;
+                    interpolatedRoll %= 2 * (float)Math.PI;
+
+                    // Write the calculated yaw and pitch angles to memory with increased precision
+                    memory.WriteMemory(yawAng, "float", interpolatedYaw.ToString("0.00000")); // Adjust the number of decimal places as needed
+                    memory.WriteMemory(pitchAng, "float", interpolatedPitch.ToString("0.00000")); // Adjust the number of decimal places as needed
+                    memory.WriteMemory(rollAng, "float", interpolatedRoll.ToString("0.00000")); // Adjust the number of decimal places as needed
+
+                }
+                else if (enableLookTarget.Checked == false)
+                {
+                    // Calculate the look angles using your existing code
+                    float interpolatedYaw = Easing.CatmullRomAngle(keyPoints[p0Index].Item4, keyPoints[p1Index].Item4, keyPoints[p2Index].Item4, keyPoints[p3Index].Item4, tInSection);
+                    float interpolatedPitch = Easing.CatmullRomAngle(keyPoints[p0Index].Item5, keyPoints[p1Index].Item5, keyPoints[p2Index].Item5, keyPoints[p3Index].Item5, tInSection);
+                    float interpolatedRoll = Easing.CatmullRomAngle(keyPoints[p0Index].Item6, keyPoints[p1Index].Item6, keyPoints[p2Index].Item6, keyPoints[p3Index].Item6, tInSection);
+
+                    // Ensure angle values are within the appropriate range (0 to 2π)
+                    interpolatedYaw %= 2 * (float)Math.PI;
+                    interpolatedPitch %= 2 * (float)Math.PI;
+                    interpolatedRoll %= 2 * (float)Math.PI;
+
+                    // Write interpolated angles to memory
+                    memory.WriteMemory(yawAng, "float", $"{interpolatedYaw}");
+                    memory.WriteMemory(pitchAng, "float", $"{interpolatedPitch}");
+                    memory.WriteMemory(rollAng, "float", $"{interpolatedRoll}");
+                }
 
                 float interpolatedFOV = Easing.CatmullRomFOV(keyPoints[p0Index].Item7, keyPoints[p1Index].Item7, keyPoints[p2Index].Item7, keyPoints[p3Index].Item7, tInSection);
 
-                Console.WriteLine($"Progress {t}, Point = ({interpolatedPoint.X}, {interpolatedPoint.Y}, {interpolatedPoint.Z})");
-                Console.WriteLine($"Progress {t}, View angle = ({interpolatedYaw}, {interpolatedPitch}, {interpolatedRoll}), Progress {t}, Fov = ({interpolatedFOV})");
-
+                Console.WriteLine($"Progress {t}");
                 string result = (t * 100).ToString("F2") + "%";
                 keyProgress.Text = result.ToString();
 
@@ -99,11 +176,48 @@ namespace Camera
             }
         }
 
+        private void setTarget_Click(object sender, EventArgs e)
+        {
+            // Read the current camera position from memory
+            float cameraPosX = memory.ReadFloat(xPos);
+            float cameraPosY = memory.ReadFloat(yPos);
+            float cameraPosZ = memory.ReadFloat(zPos);
+
+            // Set targetPosition using the obtained values
+            targetPosition = new Vector3(cameraPosX, cameraPosY, cameraPosZ);
+
+            targetTextbox.Text = targetPosition.ToString();
+            Console.WriteLine(targetPosition.ToString());
+        }
+
+        private void GotoSelectedKeypoint()
+        {
+            if (keyframeDataGridView.SelectedRows.Count > 0)
+            {
+                DataGridViewRow selectedRow = keyframeDataGridView.SelectedRows[0];
+                int rowIndex = selectedRow.Index;
+
+                if (rowIndex >= 0 && rowIndex < keyPoints.Count) // Ensure the selected row index is valid
+                {
+                    var selectedKeypoint = keyPoints[rowIndex]; // Get the keypoint corresponding to the selected row
+
+                    // Write the selected keypoint's values to memory
+                    memory.WriteMemory(xPos, "float", $"{selectedKeypoint.Item1}");
+                    memory.WriteMemory(yPos, "float", $"{selectedKeypoint.Item2}");
+                    memory.WriteMemory(zPos, "float", $"{selectedKeypoint.Item3}");
+                    memory.WriteMemory(yawAng, "float", $"{selectedKeypoint.Item4}");
+                    memory.WriteMemory(pitchAng, "float", $"{selectedKeypoint.Item5}");
+                    memory.WriteMemory(rollAng, "float", $"{selectedKeypoint.Item6}");
+                    memory.WriteMemory(playerFov, "float", $"{selectedKeypoint.Item7}");
+
+                    Console.WriteLine($"Teleported to keypoint: {selectedKeypoint.Item1}, {selectedKeypoint.Item2}, {selectedKeypoint.Item3}, {selectedKeypoint.Item4}, {selectedKeypoint.Item5}, {selectedKeypoint.Item6}, {selectedKeypoint.Item7} ");
+                }
+            }
+        }
 
         private async Task Data()
         {
             fovTextbox.Text = memory.ReadFloat(playerFov).ToString();
-            fovVehiTextbox.Text = memory.ReadFloat(vehicleFov).ToString();
             rollAngle.Text = memory.ReadFloat(rollAng).ToString();
             quickAccessSpeed.Text = memory.ReadFloat(speedCamera).ToString();
 
@@ -160,5 +274,16 @@ namespace Camera
 
             memory.WriteMemory(playerFov, "float", decFloat.ToString());
         }
+    }
+
+    public class Keypoint
+    {
+        public float XPos { get; set; }
+        public float YPos { get; set; }
+        public float ZPos { get; set; }
+        public float YawAng { get; set; }
+        public float PitchAng { get; set; }
+        public float RollAng { get; set; }
+        public float PlayerFov { get; set; }
     }
 }

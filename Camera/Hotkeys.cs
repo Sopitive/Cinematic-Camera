@@ -19,12 +19,9 @@ namespace Camera
         [DllImport("user32.dll")]
         private static extern IntPtr GetForegroundWindow();
 
-        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        private static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
-
         [DllImport("user32.dll")]
         private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
-        
+
         private AppSettings settings = new AppSettings();
 
         private const int HOTKEY_ENABLE_PATHING = 1;
@@ -149,12 +146,6 @@ namespace Camera
             focusCheckTimer.Dispose();
 
             base.OnFormClosing(e);
-        }
-
-        private void UpdateHotkey(uint hotkeyId, Keys newKey)
-        {
-            UnregisterHotKey(this.Handle, (int)hotkeyId);
-            RegisterHotKey(this.Handle, (int)hotkeyId, 0, (uint)newKey);
         }
     }
 

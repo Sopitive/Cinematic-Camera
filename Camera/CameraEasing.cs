@@ -69,6 +69,19 @@ namespace Camera
                 return a * t * t * t + b * t * t + c * t + d;
             }
 
+            private float LerpAngle(float a, float b, float t)
+            {
+                float delta = Math.Abs(b - a);
+                if (delta > Math.PI)
+                {
+                    if (b > a)
+                        a += 2 * (float)Math.PI;
+                    else
+                        b += 2 * (float)Math.PI;
+                }
+                return a + (b - a) * t;
+            }
+
             // Generic interpolation function for floats
             public static float Interpolate(float a, float b, float t, Func<float, float> EaseInOut)
             {

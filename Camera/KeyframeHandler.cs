@@ -43,6 +43,44 @@ namespace Camera
             }
         }
 
+        private void ReplaceSelectedKeypointWithCurrentLocation()
+        {
+            if (keyframeDataGridView.SelectedRows.Count > 0)
+            {
+                DataGridViewRow selectedRow = keyframeDataGridView.SelectedRows[0];
+                int rowIndex = selectedRow.Index;
+
+                if (rowIndex >= 0 && rowIndex < keyPoints.Count) // Ensure the selected row index is valid
+                {
+                    // Read the current camera location from memory
+                    float currentXPos = memory.ReadFloat(xPos);
+                    float currentYPos = memory.ReadFloat(yPos);
+                    float currentZPos = memory.ReadFloat(zPos);
+                    float currentYawAng = memory.ReadFloat(yawAng);
+                    float currentPitchAng = memory.ReadFloat(pitchAng);
+                    float currentRollAng = memory.ReadFloat(rollAng);
+                    float currentPlayerFov = memory.ReadFloat(playerFov);
+
+                    // Update the corresponding keypoint in the keyPoints list
+                    keyPoints[rowIndex] = (currentXPos, currentYPos, currentZPos, currentYawAng, currentPitchAng, currentRollAng, currentPlayerFov);
+
+                    // Update the DataGridView with the new values
+                    selectedRow.Cells[0].Value = currentXPos.ToString();
+                    selectedRow.Cells[1].Value = currentYPos.ToString();
+                    selectedRow.Cells[2].Value = currentZPos.ToString();
+                    selectedRow.Cells[3].Value = currentYawAng.ToString();
+                    selectedRow.Cells[4].Value = currentPitchAng.ToString();
+                    selectedRow.Cells[5].Value = currentRollAng.ToString();
+                    selectedRow.Cells[6].Value = currentPlayerFov.ToString();
+
+                    // Refresh the DataGridView to reflect the changes
+                    keyframeDataGridView.Refresh();
+
+                    Console.WriteLine($"Updated keypoint at row {rowIndex} with current location.");
+                }
+            }
+        }
+
         private void ImportKeyPoints(string filePath)
         {
             try
