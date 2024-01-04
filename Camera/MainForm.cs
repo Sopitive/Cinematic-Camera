@@ -8,6 +8,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Numerics;
+using System.Collections.Specialized;
 
 namespace Camera
 {
@@ -30,6 +31,7 @@ namespace Camera
         public string speedCamera;
         public string playerFov;
         public string vehicleFov;
+        public string targetAddr;
 
         public string mccProcessSteam = "MCC-Win64-Shipping";
         public string mccProcessWinstore = "MCCWinStore-Win64-Shipping";
@@ -46,7 +48,8 @@ namespace Camera
             InitializeTimeline();
             InitializeHotKeyTimer();
             InitializeHotkeys();
-
+            KeyDown += new KeyEventHandler(Form_KeyDown);
+            this.KeyPreview = true;
             try
             {
                 string programDirectory = AppDomain.CurrentDomain.BaseDirectory;
@@ -120,6 +123,16 @@ namespace Camera
             RemoveSelectedKeypoint();
         }
 
+        
+
+        private void Form_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Delete)
+            {
+                RemoveSelectedKeypoint();
+            }
+        }
+
         private void enablePathing_CheckedChanged(object sender, EventArgs e)
         {
             if (enablePathing.Checked == true)
@@ -142,6 +155,7 @@ namespace Camera
                 if (PID == 0) return;
 
                 UpdateModules();
+
             }
             else
             {
@@ -149,7 +163,27 @@ namespace Camera
             }
         }
 
-        private void pluginAddressCombobox_SelectedIndexChanged(object sender, EventArgs e)
+        //Give system.generic.list<sting> as parameter
+        public void SetupPos(List<string> StringList)
+        {
+            targetAddr = StringList[3];
+            var lastOffset = "0x0";
+            xPos = StringList[0] + lastOffset;
+            lastOffset = "0x4";
+            yPos = StringList[0] + lastOffset;
+            lastOffset = "0x8";
+            zPos = StringList[0] + lastOffset.ToString();
+            lastOffset = "0xC";
+            yawAng = StringList[0] + lastOffset.ToString();
+            lastOffset = "0x10";
+            pitchAng = StringList[0] + lastOffset.ToString();
+            lastOffset = "0x14";
+            rollAng = StringList[0] + lastOffset.ToString();
+            speedCamera = StringList[1];
+            playerFov = StringList[2];
+        }
+
+        private void pluginAddressCombobox_SelectedIndexChangedAsync(object sender, EventArgs e)
         {
             if (pluginAddressCombobox.Text == "None (Select one!)") return;
 
@@ -161,22 +195,14 @@ namespace Camera
 
                 string subfolderPath = Path.Combine(programDirectory, subfolderName);
 
+
+
                 string selectedFilePath = Path.Combine(subfolderPath, comboBox.SelectedItem.ToString());
                 GlobalData.LoadJSONFile(selectedFilePath);
-                var lastOffset = "0x20";
-                xPos = GlobalData.StringList[0] + lastOffset;
-                lastOffset = "0x24";
-                yPos = GlobalData.StringList[0] + lastOffset;
-                lastOffset = "0x28";
-                zPos = GlobalData.StringList[0] + lastOffset;
-                lastOffset = "0x2C";
-                yawAng = GlobalData.StringList[0] + lastOffset;
-                lastOffset = "0x30";
-                pitchAng = GlobalData.StringList[0] + lastOffset;
-                lastOffset = "0x34";
-                rollAng = GlobalData.StringList[0] + lastOffset;
-                speedCamera = GlobalData.StringList[1];
-                playerFov = GlobalData.StringList[2];
+                SetupPos(GlobalData.StringList);
+
+
+
                 //vehicleFov = GlobalData.StringList[8];
             }
         }
@@ -223,6 +249,7 @@ namespace Camera
             memory.WriteMemory(yPos, "float", teleportCameraY.Text);
             memory.WriteMemory(zPos, "float", teleportCameraZ.Text);
         }
+
 
     }
 }

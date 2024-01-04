@@ -21,16 +21,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="plugins\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Reference Include="Memory">
       <HintPath>..\Memory.dll</HintPath>
     </Reference>
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="plugins\H2AMP.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="plugins\Hopefully_Forge_World_IG.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
